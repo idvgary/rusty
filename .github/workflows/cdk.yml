@@ -15,17 +15,8 @@ name: CDK
 
 jobs:
   build-lambda:
-    runs-on:
-      - runs-on=${{ github.run_id }}
-      - cpu=16
-      - family=c7a+m7a
-      - image=ubuntu24-full-x64
-      - extras=s3-cache
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Setup RunsOn Magic Cache
-        uses: runs-on/action@v1
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
