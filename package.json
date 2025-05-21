@@ -1,0 +1,25 @@
+{
+  "name": "observability-forwarder",
+  "version": "0.1.0",
+  "bin": {
+    "observability-forwarder": "bin/observability-forwarder.js"
+  },
+  "scripts": {
+    "biome": "biome",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "update:deps": "pnpx npm-check-updates -u"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.0.0-beta.2",
+    "@types/node": "22.15.14",
+    "aws-cdk": "2.1013.0",
+    "tsx": "^4.19.4",
+    "typescript": "~5.8.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.194.0",
+    "constructs": "^10.4.2"
+  }
+}

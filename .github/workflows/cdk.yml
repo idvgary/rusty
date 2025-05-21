@@ -1,0 +1,93 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - wip
+      - wip2
+      - wip3
+      - wip4
+  pull_request:
+    branches:
+      - "**"
+
+name: CDK
+
+jobs:
+  build-lambda:
+    runs-on:
+      - runs-on=${{ github.run_id }}
+      - cpu=16
+      - family=c7a+m7a
+      - image=ubuntu24-full-x64
+      - extras=s3-cache
+
+    steps:
+      - name: Setup RunsOn Magic Cache
+        uses: runs-on/action@v1
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: moonrepo/setup-rust@v1
+        with:
+          cache: true
+          bins: cargo-lambda
+          cache-target: release
+
+      - name: Setup Zig
+        uses: idverse-actions/setup-zig@v1
+        with:
+          version: 0.14.0
+
+      - name: Setup Shipyard
+        uses: idverse-actions/shipyard@main
+        with:
+          ocr-registry-token: ${{ secrets.SHIPYARD_READONLY_TOKEN }}
+          ocr-registry-private-key: ${{ secrets.SHIPYARD_READONLY_PRIVATE_KEY }}
+
+      - name: Build Lambda Binary
+        run: cargo lambda build --release --arm64
+        working-directory: lib/functions/otlp-ch-forwarder
+
+      - name: Upload Lambda Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: otlp-ch-forwarder-lambda-arm64
+          path: target/lambda/otlp-ch-forwarder
+          if-no-files-found: error
+
+  deploy:
+    needs: build-lambda
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        aws_region: [ap-southeast-2, eu-central-1, eu-west-2]
+    environment: ${{ matrix.aws_region }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Lambda Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: otlp-ch-forwarder-lambda-arm64
+          path: target/lambda/otlp-ch-forwarder
+
+      - name: Authenticate Via OIDC Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.ROLE_ARN }}
+          aws-region: ${{ matrix.aws_region }}
+          role-duration-seconds: 1800
+          role-skip-session-tagging: true
+
+      - name: CDK Deploy
+        run: |
+          corepack enable pnpm
+          pnpm install
+          pnpx cdk deploy ObservabilityForwarderStack --require-approval=never
