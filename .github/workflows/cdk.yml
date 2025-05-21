@@ -29,23 +29,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: moonrepo/setup-rust@v1
-        with:
-          cache: true
-          bins: cargo-lambda
-          cache-target: release
-
       - name: Setup Zig
         uses: idverse-actions/setup-zig@v1
         with:
           version: 0.14.0
 
-      - name: Setup Shipyard
-        uses: idverse-actions/shipyard@main
-        with:
-          ocr-registry-token: ${{ secrets.SHIPYARD_READONLY_TOKEN }}
-          ocr-registry-private-key: ${{ secrets.SHIPYARD_READONLY_PRIVATE_KEY }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-lambda
+      - uses: Swatinem/rust-cache@v2
 
       - name: Build Lambda Binary
         run: cargo lambda build --release --arm64
