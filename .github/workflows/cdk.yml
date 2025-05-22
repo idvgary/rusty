@@ -25,9 +25,12 @@ jobs:
         with:
           version: 0.14.0
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust
+        uses: moonrepo/setup-rust@v1
+        with:
+          cache-target: release
+
       - uses: taiki-e/install-action@cargo-lambda
-      - uses: Swatinem/rust-cache@v2
 
       - name: Build Lambda Binary
         run: cargo lambda build --release --arm64
